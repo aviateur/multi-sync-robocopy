@@ -2,7 +2,7 @@
 Spiegeleung mehrerer Ordner
 
 ## Zweck
-Es können mehrere Ordner mittels des Skripts `rcsync_multi_folder.cmd` können mherere Ordner gespiegelt werden. Diese müssen in der Datei `SourceDest.txt` definiert werden.
+Es können mehrere Ordner mittels des Skripts `rcsync_multi_folder.cmd` gespiegelt werden. Diese müssen in der Datei `SourceDest.txt` definiert werden.
 
 Das Skript nutzt `robocopy`, näheres dazu unter
 
