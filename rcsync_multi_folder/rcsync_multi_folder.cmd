@@ -1,5 +1,6 @@
 @echo off
-set moddate=2023-03-04
+setlocal enabledelayedexpansion
+set moddate=2025-09-05
 echo.
 echo.
 echo ---------------------------------------------------------
@@ -15,10 +16,10 @@ echo.
 rem created  at 2020-02-27 by aviateur
 rem modified at 2020-05-14 by aviateur; Ordner erzeugen, wenn er nicht existiert
 rem published at 2023-03-04 by aviateur
+rem modified at 2025-09-05; robustere Fehlerauswertung, Quoting, Existenzpruefung
 
-
-rem Benötigte Dateien:
-rem - SourceDest.txt: Vorlage für Quelle, Ziel, ...
+rem Benoetigte Dateien:
+rem - SourceDest.txt: Vorlage fuer Quelle, Ziel, ...
 rem   SOURCE=%%a
 rem   FILE=%%b
 rem   DEST=%%c          - ohne den Teil unter %SYNCPATH%
@@ -43,39 +44,71 @@ if "%Thh1%"==" " set Thh1=0
 
 set Tstamp=%DYYYY%-%DMM%-%DDD%~%Thh1%%Thh2%-%Tmm%
 
+rem Pfade festlegen (ohne abschliessenden Backslash)
 
-rem Pfade festlegen (ohne abschliessenden Backslach)
-
-rem set SYNCPATH=C:
 set LOGD=c:\temp
 
-rem if not exist %SYNCPATH% (
-rem   mkdir %SYNCPATH%
-rem ) else (
-rem   cd %SYNCPATH%
-rem )
+if not exist "%LOGD%" mkdir "%LOGD%"
+
+rem Steuerdatei
+
+set "file0=%~dp0SourceDest.txt"
+
+if not exist "%file0%" (
+    echo.
+    echo FEHLER: Steuerdatei nicht gefunden:
+    echo   "%file0%"
+    echo Es wurde nichts kopiert.
+    echo.
+    pause
+    exit /b 1
+)
+
+rem Zaehler fuer die Zusammenfassung
+set /a JOBS=0
+set /a FAILED=0
+set "FAILLIST="
 
 rem Kopier-Schleife
-set "file0=%~dp0\SourceDest.txt"
-set l=C:\temp
-
 for /f "usebackq eol=# tokens=1-6 delims=;" %%a in ("%file0%") do (
-	echo.
+    set /a JOBS+=1
+    echo.
     echo %%f
-	if not exist %%c mkdir %%c
-    robocopy "%%a" "%%c" "%%b" %%e /log+:"%LOGD%\%%d_%Tstamp%.log")
-    	
-rem explorer %SYNCPATH%
-rem explorer C:\TEMP
 
-:meldung
-echo.
-if %errorlevel% NEQ 0 (
-echo errorlevel: %errorlevel%
+    if not exist "%%c" (
+        mkdir "%%c" 2>nul
+        if not exist "%%c" (
+            echo   FEHLER: Zielordner "%%c" konnte nicht angelegt werden - Job wird uebersprungen.
+            set /a FAILED+=1
+            set "FAILLIST=!FAILLIST! %%c"
+        )
+    )
+
+    if exist "%%c" (
+        robocopy "%%a" "%%c" "%%b" %%e /log+:"%LOGD%\%%d_%Tstamp%.log"
+        set RC=!errorlevel!
+        if !RC! GEQ 8 (
+            echo   FEHLER: Robocopy meldet Fehlercode !RC! fuer "%%c" - siehe Logfile.
+            set /a FAILED+=1
+            set "FAILLIST=!FAILLIST! %%c"
+        )
+    )
 )
+
 echo.
-echo Fertig!
-echo nun sollten alle Ordner gespiegelt sein
+echo ---------------------------------------------------------
+if %FAILED% GTR 0 (
+    echo   FERTIG MIT FEHLERN: %FAILED% von %JOBS% Job(s) fehlgeschlagen.
+    echo   Betroffene Ziele:!FAILLIST!
+    echo   Bitte Logfiles in "%LOGD%" pruefen.
+) else (
+    echo   Fertig! Alle %JOBS% Ordner wurden erfolgreich gespiegelt.
+)
+echo ---------------------------------------------------------
 echo.
+
 rem pause
 
+set "EXITCODE=0"
+if %FAILED% GTR 0 set "EXITCODE=1"
+endlocal & exit /b %EXITCODE%
