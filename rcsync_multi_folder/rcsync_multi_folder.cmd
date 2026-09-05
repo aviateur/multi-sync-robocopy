@@ -16,7 +16,7 @@ echo.
 rem created  at 2020-02-27 by aviateur
 rem modified at 2020-05-14 by aviateur; Ordner erzeugen, wenn er nicht existiert
 rem published at 2023-03-04 by aviateur
-rem modified at 2025-09-05; robustere Fehlerauswertung, Quoting, Existenzpruefung
+rem modified at 2026-09-05; robustere Fehlerauswertung, Quoting, Existenzpruefung
 
 rem Benoetigte Dateien:
 rem - SourceDest.txt: Vorlage fuer Quelle, Ziel, ...
